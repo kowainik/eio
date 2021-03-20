@@ -64,3 +64,11 @@ library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     EIO
+
+executable readme
+  import:              common-options
+  main-is:             README.lhs
+  build-depends:       eio
+
+  build-tool-depends:  markdown-unlit:markdown-unlit
+  ghc-options:         -pgmL markdown-unlit
