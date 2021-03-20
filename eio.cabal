@@ -63,4 +63,4 @@ common common-options
 library
   import:              common-options
   hs-source-dirs:      src
-  exposed-modules:     Eio
+  exposed-modules:     EIO
