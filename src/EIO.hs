@@ -108,7 +108,7 @@ catch
     .  Exception e
     => EIO e1 a
     -> (e -> EIO e2 a)
-    -> EIO (Delete e (e1 <> e2)) a
+    -> EIO (Delete e e1 <> e2) a
 catch = coerce @(IO a -> (e -> IO a) -> IO a) IO.catch
 
 type family Delete (x :: Type) (xs :: [Type]) :: [Type] where
