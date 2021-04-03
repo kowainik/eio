@@ -27,10 +27,9 @@ module EIO
 import Prelude hiding (return, (>>), (>>=))
 
 import Control.Exception (Exception)
-import Control.Monad
 import Data.Coerce (coerce)
-import Data.Kind (Type, Constraint)
-import GHC.TypeLits
+import Data.Kind (Type)
+import EIO.TypeErrors (DisallowUnhandledExceptions)
 
 import qualified GHC.IO as IO
 import qualified Prelude
@@ -67,36 +66,6 @@ safeMain = EIO.do
 runEIO :: DisallowUnhandledExceptions excepts => EIO excepts () -> IO ()
 runEIO = coerce
 
-type family DisallowUnhandledExceptions (excepts :: [Type]) :: Constraint where
-    DisallowUnhandledExceptions '[]     = ()
-    DisallowUnhandledExceptions excepts =
-      TypeError
-        (     'Text "The 'runEIO' handler requires that all exceptions in 'EIO' to be handled."
-        ':$$: 'Text "The action 'runEIO' is applied to throws the following unhandled exceptions:"
-        ':$$: ShowTypeList excepts
-        )
-
-type family ShowTypeList (xs :: [Type]) :: ErrorMessage where
-    ShowTypeList '[] = 'Text ""
-    ShowTypeList (x ': xs) = 'Text "\t• " ':<>: ('ShowType x) ':$$: (ShowTypeList xs)
-
-data MyErr1 = MyErr1 deriving (Show)
-
-instance Exception MyErr1
-
-data MyErr2 = MyErr2 deriving (Show)
-
-instance Exception MyErr2
-
-data MyErr3 = MyErr3 deriving (Show)
-
-instance Exception MyErr3
-
-safeMainWrong :: IO ()
-safeMainWrong = runEIO errorsAbound
-  where
-    -- errorsAbound :: EIO '[MyErr1, MyErr2, MyErr3] ()
-    errorsAbound = (throw MyErr1) EIO.>> (throw MyErr2) EIO.>> (throw MyErr3)
 
 {- | Wrap a value into 'EIO' without throwing any exceptions.
 
