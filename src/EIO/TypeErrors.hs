@@ -21,4 +21,4 @@ type family DisallowUnhandledExceptions (excepts :: [Type]) :: Constraint where
 
 type family ShowTypeList (xs :: [Type]) :: ErrorMessage where
     ShowTypeList '[] = 'Text ""
-    ShowTypeList (x ': xs) = 'Text "\t• " ':<>: ('ShowType x) ':$$: (ShowTypeList xs)
+    ShowTypeList (x ': xs) = 'Text "  • " ':<>: ('ShowType x) ':$$: (ShowTypeList xs)

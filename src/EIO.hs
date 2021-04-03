@@ -34,6 +34,10 @@ import EIO.TypeErrors (DisallowUnhandledExceptions)
 import qualified GHC.IO as IO
 import qualified Prelude
 
+-- $setup
+-- >>> import qualified EIO as EIO
+-- >>> data MyErr = MyErr deriving (Show)
+-- >>> instance Exception MyErr
 
 {- | Main type for 'IO' that tracks exceptions on the
 type-level. Simply wraps 'IO' and adds exceptions meta-information.
@@ -61,11 +65,26 @@ safeMain = EIO.do
     ... your code ...
 @
 
+>>> :{
+  EIO.runEIO $ EIO.do
+    EIO.throw MyErr `EIO.catch` (\MyErr -> (EIO $ putStrLn "handled error") >> EIO.return ())
+    EIO $ putStrLn "ran action"
+    EIO.return ()
+>>> :}
+handled error
+ran action
+
+>>> EIO.runEIO $ EIO.throw MyErr >> EIO.return ()
+...
+... The 'runEIO' handler requires that all exceptions in 'EIO' to be handled.
+    The action 'runEIO' is applied to throws the following unhandled exceptions:
+      • MyErr1
+...
+
 @since 0.0.0.0
 -}
 runEIO :: DisallowUnhandledExceptions excepts => EIO excepts () -> IO ()
 runEIO = coerce
-
 
 {- | Wrap a value into 'EIO' without throwing any exceptions.
 
