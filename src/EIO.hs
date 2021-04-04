@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE QualifiedDo #-}
 
 {- |
 Copyright: (c) 2021 Kowainik
@@ -18,6 +19,7 @@ module EIO
       -- * Basic API
     , throw
     , catch
+    , unsafeLiftIO
       -- * QualifieDo interface
     , return
     , (>>=)
@@ -67,8 +69,8 @@ safeMain = EIO.do
 
 >>> :{
   EIO.runEIO $ EIO.do
-    EIO.throw MyErr `EIO.catch` (\MyErr -> (EIO $ putStrLn "handled error") >> EIO.return ())
-    EIO $ putStrLn "ran action"
+    EIO.throw MyErr `EIO.catch` (\MyErr -> EIO.unsafeLiftIO $ putStrLn "handled error")
+    EIO.unsafeLiftIO $ putStrLn "ran action"
     EIO.return ()
 >>> :}
 handled error
@@ -78,13 +80,14 @@ ran action
 ...
 ... The 'runEIO' handler requires that all exceptions in 'EIO' to be handled.
     The action 'runEIO' is applied to throws the following unhandled exceptions:
-      • MyErr1
+      • MyErr
 ...
 
 @since 0.0.0.0
 -}
-runEIO :: DisallowUnhandledExceptions excepts => EIO excepts () -> IO ()
+runEIO :: (DisallowUnhandledExceptions excepts) => EIO excepts () -> IO ()
 runEIO = coerce
+
 
 {- | Wrap a value into 'EIO' without throwing any exceptions.
 
@@ -112,6 +115,16 @@ type family (<>) (xs :: [Type]) (ys :: [Type]) :: [Type] where
     '[] <> ys = ys
     xs <> '[] = xs
     (x ': xs) <> ys = x ': (xs <> ys)
+
+{- | Allows one to lift an IO action into EIO, but you are telling the compiler
+that there are no exceptions in your IO action. The safety of this function is
+contingent on the user keeping their promise of exception free code, which is why
+this function is labelled as unsafe.
+
+@since 0.0.1.1
+-}
+unsafeLiftIO :: IO a -> EIO '[] a
+unsafeLiftIO = EIO
 
 {- | Throw exception.
 
