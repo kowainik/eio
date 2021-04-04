@@ -2,7 +2,6 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE QualifiedDo #-}
 
 {- |
 Copyright: (c) 2021 Kowainik
@@ -20,6 +19,7 @@ module EIO
     , throw
     , catch
     , unsafeLiftIO
+    , tryLiftIO
       -- * QualifieDo interface
     , return
     , (>>=)
@@ -28,7 +28,7 @@ module EIO
 
 import Prelude hiding (return, (>>), (>>=))
 
-import Control.Exception (Exception)
+import Control.Exception (Exception, try)
 import Data.Coerce (coerce)
 import Data.Kind (Type)
 import EIO.TypeErrors (DisallowUnhandledExceptions)
@@ -37,7 +37,6 @@ import qualified GHC.IO as IO
 import qualified Prelude
 
 -- $setup
--- >>> import qualified EIO as EIO
 -- >>> data MyErr = MyErr deriving (Show)
 -- >>> instance Exception MyErr
 
@@ -68,10 +67,9 @@ safeMain = EIO.do
 @
 
 >>> :{
-  EIO.runEIO $ EIO.do
-    EIO.throw MyErr `EIO.catch` (\MyErr -> EIO.unsafeLiftIO $ putStrLn "handled error")
-    EIO.unsafeLiftIO $ putStrLn "ran action"
-    EIO.return ()
+  runEIO $ EIO.do
+    throw MyErr `catch` (\MyErr -> unsafeLiftIO $ putStrLn "handled error")
+    unsafeLiftIO $ putStrLn "ran action"
 >>> :}
 handled error
 ran action
@@ -125,6 +123,16 @@ this function is labelled as unsafe.
 -}
 unsafeLiftIO :: IO a -> EIO '[] a
 unsafeLiftIO = EIO
+
+
+{- | A safer version of `unsafeLiftIO` this function first tries the action
+and forces the caller to handle the exception purely before before proceeding
+in EIO with a clean exception state.
+
+@since 0.0.1.1
+-}
+tryLiftIO :: (Exception e) => IO a -> EIO '[] (Either e a)
+tryLiftIO = EIO . try
 
 {- | Throw exception.
 
