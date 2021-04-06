@@ -22,9 +22,14 @@ cabal.project.local
 .ghc.environment.*
 .HTF/
 .hie/
+ghcid.txt
+
 # Stack
 .stack-work/
 stack.yaml.lock
+
+# Nix
+shell.nix
 
 ### IDE/support
 # Vim

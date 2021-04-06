@@ -64,6 +64,19 @@ library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     EIO
+                     , EIO.TypeErrors
+
+test-suite eio-doctest
+  import:              common-options
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Doctest.hs
+
+  build-depends:       eio
+                     , doctest
+                     , Glob
+
+  ghc-options:         -threaded
 
 executable readme
   import:              common-options

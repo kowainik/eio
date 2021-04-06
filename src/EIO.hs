@@ -18,6 +18,8 @@ module EIO
       -- * Basic API
     , throw
     , catch
+    , unsafeLiftIO
+    , tryLiftIO
       -- * QualifieDo interface
     , return
     , (>>=)
@@ -26,13 +28,17 @@ module EIO
 
 import Prelude hiding (return, (>>), (>>=))
 
-import Control.Exception (Exception)
+import Control.Exception (Exception, try)
 import Data.Coerce (coerce)
 import Data.Kind (Type)
+import EIO.TypeErrors (DisallowUnhandledExceptions)
 
 import qualified GHC.IO as IO
 import qualified Prelude
 
+-- $setup
+-- >>> data MyErr = MyErr deriving (Show)
+-- >>> instance Exception MyErr
 
 {- | Main type for 'IO' that tracks exceptions on the
 type-level. Simply wraps 'IO' and adds exceptions meta-information.
@@ -60,10 +66,26 @@ safeMain = EIO.do
     ... your code ...
 @
 
+>>> :{
+  runEIO $ EIO.do
+    throw MyErr `catch` (\MyErr -> unsafeLiftIO $ putStrLn "handled error")
+    unsafeLiftIO $ putStrLn "ran action"
+>>> :}
+handled error
+ran action
+
+>>> EIO.runEIO $ EIO.throw MyErr >> EIO.return ()
+...
+... • The 'runEIO' handler requires that all exceptions in 'EIO' to be handled.
+...   The action 'runEIO' is applied to throws the following unhandled exceptions:
+...     • MyErr
+...
+
 @since 0.0.0.0
 -}
-runEIO :: EIO '[] () -> IO ()
+runEIO :: (DisallowUnhandledExceptions excepts) => EIO excepts () -> IO ()
 runEIO = coerce
+
 
 {- | Wrap a value into 'EIO' without throwing any exceptions.
 
@@ -91,6 +113,26 @@ type family (<>) (xs :: [Type]) (ys :: [Type]) :: [Type] where
     '[] <> ys = ys
     xs <> '[] = xs
     (x ': xs) <> ys = x ': (xs <> ys)
+
+{- | Allows one to lift an IO action into EIO, but you are telling the compiler
+that there are no exceptions in your IO action. The safety of this function is
+contingent on the user keeping their promise of exception free code, which is why
+this function is labelled as unsafe.
+
+@since 0.0.1.1
+-}
+unsafeLiftIO :: IO a -> EIO '[] a
+unsafeLiftIO = EIO
+
+
+{- | A safer version of `unsafeLiftIO` this function first tries the action
+and forces the caller to handle the exception purely before before proceeding
+in EIO with a clean exception state.
+
+@since 0.0.1.1
+-}
+tryLiftIO :: (Exception e) => IO a -> EIO '[] (Either e a)
+tryLiftIO = EIO . try
 
 {- | Throw exception.
 
