@@ -76,9 +76,9 @@ ran action
 
 >>> EIO.runEIO $ EIO.throw MyErr >> EIO.return ()
 ...
-... The 'runEIO' handler requires that all exceptions in 'EIO' to be handled.
-    The action 'runEIO' is applied to throws the following unhandled exceptions:
-      • MyErr
+... • The 'runEIO' handler requires that all exceptions in 'EIO' to be handled.
+...   The action 'runEIO' is applied to throws the following unhandled exceptions:
+...     • MyErr
 ...
 
 @since 0.0.0.0
